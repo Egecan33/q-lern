@@ -12,8 +12,8 @@ discount_factor = 0.9
 epsilon = 1.0  # Exploration rate
 max_epsilon = 1.0
 min_epsilon = 0.01
-epsilon_decay = 0.001
-total_episodes = 350
+epsilon_decay = 0.00001
+total_episodes = 3500
 
 # Initialize the Q-table
 q_table = np.zeros((env.observation_space.n, env.action_space.n))

@@ -15,6 +15,7 @@ class CustomEnv(gym.Env):
         self.state = self.reset()
 
     def reset(self):
+        # self.bobbin_priorities = np.random.randint(1, 9, size=9)
         self.state = [
             self.bobbin_priorities[0],
             self.bobbin_priorities[1],
