@@ -93,7 +93,7 @@ class CustomEnv(gym.Env):
         - Return True if free, False otherwise.
         """
         # Implement the logic to check if a bobbin is free
-        return True
+        return True  # Pınar
 
     def _is_slot_available(self, slot, from_slot=None):
         """
@@ -102,7 +102,7 @@ class CustomEnv(gym.Env):
         - Return True if available, False otherwise.
         """
         # Implement the slot availability logic here
-        return True
+        return True  # Funda
 
     def calculate_reward(self):
         """
@@ -110,8 +110,9 @@ class CustomEnv(gym.Env):
         - Define the reward strategy based on the current state.
         - Return the calculated reward.
         """
+        # count step puan kırmaca
         # Implement the reward calculation logic here
-        return reward
+        return reward  # Pınar + Selin
 
     def _get_blocking_slots(self, slot):
         """
@@ -119,7 +120,7 @@ class CustomEnv(gym.Env):
         - Return a list of blocking slots.
         """
         # Define the blocking slots here
-        return []
+        return []  # Pınar +Selin
 
     def render(self, mode="human"):
         """
@@ -127,6 +128,7 @@ class CustomEnv(gym.Env):
         - Display the state in a human-readable format.
         """
         # Implement the rendering logic here
+        # İzel
 
     def find_available_moves(self):
         """
@@ -134,7 +136,7 @@ class CustomEnv(gym.Env):
         - Return a list of possible actions.
         """
         # Implement the logic to find available moves
-        return available_moves
+        return available_moves  # Egecan
 
 
 # Rest of your Q-learning implementation goes here
@@ -151,11 +153,11 @@ discount_factor = 0.9  # Discount factor for future rewards
 epsilon = 1.0  # Initial exploration rate
 max_epsilon = 1.0  # Maximum exploration rate
 min_epsilon = 0.01  # Minimum exploration rate
-epsilon_decay = 0.00001  # Decay rate for exploration probability
-total_episodes = 3500  # Total number of episodes for training
+epsilon_decay = 0.0001  # Decay rate for exploration probability
+total_episodes = 350  # Total number of episodes for training
 
 # Initialize the Q-table
-q_table = np.zeros((env.observation_space.n, env.action_space.n))
+q_table = np.zeros((env.observation_space.n, env.action_space.n))  # Egecan
 
 # Q-learning algorithm
 for episode in range(total_episodes):
@@ -172,11 +174,12 @@ for episode in range(total_episodes):
             )  # may be a greedy heuristic instead of random
         else:
             # Exploit: choose the best action based on Q-table
-            action = np.argmax(q_table[state])
+            action = np.argmax(q_table[state])  # birlikte bakarız
 
         # Take the action and observe the outcome
         new_state, reward, done, _ = env.step(action)
-        total_reward += reward
+
+        total_reward += reward  # değişebilir#
 
         # Q-learning update rule
         q_table[state, action] = q_table[state, action] + learning_rate * (
