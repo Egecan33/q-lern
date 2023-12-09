@@ -15,7 +15,7 @@ class CustomEnv(gym.Env):
         - Set initial state and bobbin priorities.
         """
         super().__init__()
-        self.action_space = gym.spaces.Discrete(10)  # Define the action space
+        self.action_space = gym.spaces.Discrete(73)  # Define the action space
         self.observation_space = gym.spaces.Discrete(9)  # Define the observation space
         self.bobbin_priorities = np.random.randint(
             1, 9, size=9
@@ -29,14 +29,21 @@ class CustomEnv(gym.Env):
         - Return the initial state for the next episode.
         """
         # Define the initial state here
-        return self.state
+        return self.state  # Pınar
 
-    def initialPositionFeasibilityCheck(self, state):
+    def checkInitialPositionFeasibility(self, state):
         """
         Check if the initial state is feasible
+
+        for all existing bobbin in the initial state:
+            if the bobbin is not in the first 4 slots,
+                and the bobbin doesn't have coils under it (has to have both),
+
+                return false
+        else return true
         """
         # Implement the feasibility check logic here
-        return True
+        return True  # Funda
 
     def dueDateConverter(self, dueDate):
         """
@@ -47,6 +54,8 @@ class CustomEnv(gym.Env):
             4→2
             >=5→1
         """
+        # Implement the due date conversion logic here
+        return priority  # Gürkan
 
     def step(self, action):
         """
@@ -58,23 +67,24 @@ class CustomEnv(gym.Env):
         - Return the new state, reward, done, and info.
         """
         # Implement the action logic here
-        return self.state, reward, done, {}
+        return self.state, reward, done, {}  # Selin
 
     def move_bobbin(self, from_slot, to_slot):
         """
         Move a bobbin from one slot to another.
         - Update the state accordingly.
         """
-        # Implement the bobbin moving logic here
+        self.state[to_slot], self.state[from_slot] = self.state[from_slot], 0
+        print(f"Moved bobbin from slot {from_slot + 1} to slot {to_slot + 1}")
+        # Implement the bobbin moving logic here #İzel
 
     def is_move_valid(self, from_slot, to_slot):
-        """
-        Check if a move is valid.
-        - Verify the move based on the current state and game rules.
-        - Return True if valid, False otherwise.
-        """
-        # Implement the move validation logic here
-        return True
+        return (
+            self.state[from_slot] > 0
+            and self._is_bobbin_free(from_slot)
+            and self.state[to_slot] == 0
+            and self._is_slot_available(to_slot)
+        )
 
     def _is_bobbin_free(self, slot):
         """
