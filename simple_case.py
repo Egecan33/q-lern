@@ -1,249 +1,254 @@
 import gym
 import numpy as np
-import random
 
 
 class CustomEnv(gym.Env):
-    """
-    Custom Environment for coil stacking, compatible with OpenAI Gym.
-    """
+    step_count = 0
 
     def __init__(self):
-        """
-        Initialize the environment.
-        - Define action and observation spaces.
-        - Set initial state and bobbin priorities.
-        """
         super().__init__()
-        self.action_space = gym.spaces.Discrete(10)  # Define the action space
-        self.observation_space = gym.spaces.Discrete(9)  # Define the observation space
-        self.bobbin_priorities = np.random.randint(
-            1, 9, size=9
-        )  # Randomly assign bobbin priorities
+
+        self.step_count = 0
+        self.action_space = gym.spaces.Discrete(
+            73
+        )  # 9*8 moving actions + 1 'do nothing'
+        self.observation_space = gym.spaces.Discrete(9)  # 9 slots
+
+        # Priority of each bobbin (randomly assigned for demonstration)
+        self.bobbin_priorities = np.random.randint(1, 9, size=8)
+
         self.state = self.reset()
 
     def reset(self):
-        """
-        Reset the environment to its initial state.
-        - Reset bobbin positions and priorities.
-        - Return the initial state for the next episode.
-        """
-        # Define the initial state here
-        return self.state
-
-    def initialPositionFeasibilityCheck(self, state):
-        """
-        Check if the initial state is feasible
-        """
-        # Implement the feasibility check logic here
-        return True
-
-    def dueDateConverter(self, dueDate):
-        """
-        Due dates→Priority
-            1→30
-            2→12
-            3→5
-            4→2
-            >=5→1
-        """
+        # Initial state with priorities
+        self.step_count = 0  # Reset step_count
+        return [
+            self.bobbin_priorities[4],
+            self.bobbin_priorities[1],
+            self.bobbin_priorities[2],
+            self.bobbin_priorities[3],
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
 
     def step(self, action):
-        """
-        Execute one time step within the environment.
-        - Apply the given action.
-        - Update the environment state.
-        - Calculate reward.
-        - Check if the episode is done.
-        - Return the new state, reward, done, and info.
-        """
-        # Implement the action logic here
+        done = False
+        self.step_count += 1  # Increment step_count
+        # If the action is 'do nothing', set done to True and return
+        if action == 72:
+            done = True
+            reward = self.calculate_reward()
+            return self.state, reward, done, {}
+
+        available_moves = self.find_available_moves()
+        if action in available_moves:
+            self._move_bobbin(action)
+        else:
+            print(f"Chosen action {action} is not a valid move.")
+            action = 72  # 'Do nothing' action
+            done = True
+
+        reward = self.calculate_reward()
         return self.state, reward, done, {}
 
-    def move_bobbin(self, from_slot, to_slot):
-        """
-        Move a bobbin from one slot to another.
-        - Update the state accordingly.
-        """
-        # Implement the bobbin moving logic here
+    def _move_bobbin(self, action):
+        if action == 72:  # 'Do nothing' action
+            print("Action taken: Do nothing")
+            done = True
+            return
 
-    def is_move_valid(self, from_slot, to_slot):
-        """
-        Check if a move is valid.
-        - Verify the move based on the current state and game rules.
-        - Return True if valid, False otherwise.
-        """
-        # Implement the move validation logic here
-        return True
+        from_slot = action // 8  # Determine the source slot
+        to_slot = action % 8  # Determine the target slot
 
-    def _is_bobbin_free(self, slot):
-        """
-        Check if a bobbin is free to be moved.
-        - Determine if the bobbin is not blocked by others.
-        - Return True if free, False otherwise.
-        """
-        # Implement the logic to check if a bobbin is free
-        return True
-
-    def _is_slot_available(self, slot, from_slot=None):
-        """
-        Check if a slot is available for moving a bobbin into.
-        - Verify based on the current state and game rules.
-        - Return True if available, False otherwise.
-        """
-        # Implement the slot availability logic here
-        return True
-
-    def calculate_reward(self):
-        """
-        Calculate the reward after an action is taken.
-        - Define the reward strategy based on the current state.
-        - Return the calculated reward.
-        """
-        # Implement the reward calculation logic here
-        return reward
-
-    def _get_blocking_slots(self, slot):
-        """
-        Get the slots that block a given slot.
-        - Return a list of blocking slots.
-        """
-        # Define the blocking slots here
-        return []
-
-    def render(self, mode="human"):
-        """
-        Render the current state of the environment.
-        - Display the state in a human-readable format.
-        """
-        # Implement the rendering logic here
+        # Check if the action is a valid move
+        if (
+            from_slot < len(self.state)
+            and self.state[from_slot] > 0
+            and self._is_bobbin_free(from_slot)
+        ):
+            if (
+                to_slot < len(self.state)
+                and self.state[to_slot] == 0
+                and self._is_slot_available(to_slot, from_slot)
+            ):
+                # Perform the move
+                self.state[to_slot] = self.state[from_slot]
+                self.state[from_slot] = 0
+                print(f"Moved bobbin from slot {from_slot + 1} to slot {to_slot + 1}")
+            else:
+                print(f"Target slot {to_slot + 1} is not available for movement.")
+        else:
+            print(f"No bobbin in slot {from_slot + 1} to move or action out of range.")
 
     def find_available_moves(self):
-        """
-        Find all available moves in the current state.
-        - Return a list of possible actions.
-        """
-        # Implement the logic to find available moves
+        available_moves = []
+        for from_slot in range(9):
+            for to_slot in range(9):
+                if (
+                    from_slot != to_slot
+                    and self.state[from_slot] > 0
+                    and self._is_bobbin_free(from_slot)
+                    and self.state[to_slot] == 0
+                    and self._is_slot_available(to_slot, from_slot)
+                ):
+                    available_moves.append(from_slot * 8 + to_slot)
         return available_moves
 
+    def _is_bobbin_free(self, slot):
+        # Mapping of slots to the slots that need to be empty for the bobbin to be free
+        blocking_requirements = {
+            0: [4, 7],
+            1: [4, 5, 7, 8],
+            2: [5, 6, 7, 8],
+            3: [6, 8],
+            4: [7],
+            5: [7, 8],
+            6: [8],
+            7: [],
+            8: [],
+        }
 
-# Rest of your Q-learning implementation goes here
-# ... [CustomEnv class definition as provided earlier] ...
+        # Check if all the required slots are empty
+        if slot in blocking_requirements:
+            required_empty_slots = blocking_requirements[slot]
+            # Bobbin is free if all required slots are empty
+            return all(self.state[s] == 0 for s in required_empty_slots)
 
-# Q-Learning Algorithm Implementation
+        # If the slot is not in the defined range (for safety)
+        return False
 
-# Initialize the environment
-env = CustomEnv()
+    def _is_slot_available(self, slot, action=None):
+        # If action is None or invalid, no movement is happening
+        if action is None or action < 0 or action > 72:
+            return False
 
-# Define Q-learning parameters
-learning_rate = 0.1  # Learning rate for Q-learning updates
-discount_factor = 0.9  # Discount factor for future rewards
-epsilon = 1.0  # Initial exploration rate
-max_epsilon = 1.0  # Maximum exploration rate
-min_epsilon = 0.01  # Minimum exploration rate
-epsilon_decay = 0.00001  # Decay rate for exploration probability
-total_episodes = 3500  # Total number of episodes for training
+        # Determine the source slot based on the action
+        from_slot = action
 
-# Initialize the Q-table
-q_table = np.zeros((env.observation_space.n, env.action_space.n))
+        # If the target slot is the same as the source slot, the move is not valid
 
-# Q-learning algorithm
-for episode in range(total_episodes):
-    state = env.reset()  # Reset the environment for a new episode
-    done = False  # Initialize 'done' flag to False
-    total_reward = 0  # Initialize total reward for the episode
+        # Mapping of slots to the slots they should land on
+        landing_slots_requirements = {
+            0: [],
+            1: [],
+            2: [],
+            3: [],
+            4: [0, 1],
+            5: [1, 2],
+            6: [2, 3],
+            7: [4, 5],
+            8: [5, 6],
+        }
 
-    while not done:
-        # Exploration-exploitation trade-off
-        if random.uniform(0, 1) < epsilon:
-            # Explore: choose a random action
-            action = random.choice(
-                env.find_available_moves()
-            )  # may be a greedy heuristic instead of random
-        else:
-            # Exploit: choose the best action based on Q-table
-            action = np.argmax(q_table[state])
+        # Check if the slot is available based on the bobbins in the slots it is landing on
+        if slot in landing_slots_requirements:
+            required_slots = landing_slots_requirements[slot]
+            # Slot is available if all required slots have bobbins
+            for s in required_slots:
+                if self.state[s] == 0 and self.state[s + 1] == 0:
+                    return False
+            return True
 
-        # Take the action and observe the outcome
-        new_state, reward, done, _ = env.step(action)
-        total_reward += reward
+        # If the slot is one of the bottom layer slots (0 to 3), it is available if it is empty
 
-        # Q-learning update rule
-        q_table[state, action] = q_table[state, action] + learning_rate * (
-            reward
-            + discount_factor * np.max(q_table[new_state, :])
-            - q_table[state, action]
-        )
+        # Check if the slot is available based on the bobbins in the slots it is landing on
+        if slot in landing_slots_requirements:
+            required_slots = landing_slots_requirements[slot]
 
-        # Transition to the new state
-        state = new_state
+            # Slot is available if all required slots have bobbins and are not the source of the current action
+            for required_slot in required_slots:
+                if self.state[required_slot] == 0 or required_slot == from_slot:
+                    return False
+            return True
 
-    # Reduce epsilon (exploration rate)
-    epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(
-        -epsilon_decay * episode
-    )
+        # If the slot is one of the bottom layer slots (0 to 3), it is available if it is empty
+        if slot in range(4):
+            return self.state[slot] == 0
 
-    # Print episode summary
-    print(f"Episode {episode + 1}: Total Reward = {total_reward}")
+        # If the slot is not in the defined range (for safety)
+        return False
 
-print("Training completed.\n")
+    def calculate_reward(self):
+        reward = 0
+        # Example: Iterate through each bobbin and calculate its contribution to the reward
+        for i in range(len(self.state)):
+            if self.state[i - 1] > 0:  # If there is a bobbin
+                blocking_bobbins = self._count_blocking_bobbins(i - 1)
+                priority = self.bobbin_priorities[i - 1]
+                reward += priority * (11 - 2 * blocking_bobbins)
 
-# ... [Previous code including CustomEnv class and Q-learning training] ...
+        reward -= self.step_count + 2  # Add penalty for each step taken
+        return reward
+
+    def _count_blocking_bobbins(self, slot):
+        blocking_bobbins = 0
+
+        # Mapping of which slots block which other slots
+        blocking_slots = {
+            0: [4, 7],
+            1: [4, 5, 7, 8],
+            2: [5, 6, 7, 8],
+            3: [6, 8],
+            4: [7],
+            5: [7, 8],
+            6: [8],
+            7: [],
+            8: [],
+        }
+
+        # Check if the slot is in the bottom layer and count blocking bobbins
+        if slot in blocking_slots:
+            for blocking_slot in blocking_slots[slot]:
+                if self.state[blocking_slot] > 0:  # Adjusting index for 0-based array
+                    blocking_bobbins += 1
+                    # Count bobbins that are blocking the blockers
+                    additional_blockers = self._count_blocking_bobbins(blocking_slot)
+                    blocking_bobbins += additional_blockers
+
+        return blocking_bobbins
+
+    def render(self, mode="human"):
+        print(f"Current State: {self.state}")
+        print("")
+        print("Layer 1:", self.state[0:4])
+        print("Layer 2:", self.state[4:7])
+        print("Layer 3:", self.state[7:9])
+        print("")
 
 
-def test_model(env, q_table, test_episodes, predefined_states=None):
-    """
-    Test the trained model with specific scenarios.
+if __name__ == "__main__":
+    env = CustomEnv()
+    total_episodes = 80
 
-    Args:
-        env (gym.Env): The custom environment.
-        q_table (np.array): Trained Q-table.
-        test_episodes (int): Number of episodes to run for testing.
-        predefined_states (list): Optional list of predefined states to test.
-    """
-    for episode in range(test_episodes):
-        if predefined_states:
-            # Set the environment to a predefined state if provided
-            state = predefined_states[episode % len(predefined_states)]
-            env.set_state(state)
-        else:
-            # Reset environment to a random initial state
-            state = env.reset()
-
+    for episode in range(total_episodes):
+        state = env.reset()
         done = False
-        total_reward = 0
         step_count = 0
+        total_reward = 0
 
-        print(f"\nTesting Episode {episode + 1}")
+        print(f"\nStarting Episode {episode + 1}")
 
         while not done:
-            # Choose action based on the trained Q-table (exploitation only)
-            action = np.argmax(q_table[state])
+            # Find available moves
+            available_moves = env.find_available_moves()
 
-            # Take the action and observe the outcome
+            # Choose a random action from available moves, or 'do nothing' if none are available
+            action = np.random.choice(available_moves) if available_moves else 72
+
             new_state, reward, done, _ = env.step(action)
             total_reward += reward
 
-            # Print step details
             print(f"Step {step_count + 1}: Action taken: {action}")
             env.render()
             print(f"Reward for this step: {reward}, Total Reward: {total_reward}")
 
-            state = new_state
             step_count += 1
+            if step_count > 100:
+                break
 
         print(
-            f"Test Episode {episode + 1} finished after {step_count} steps. Total Reward: {total_reward}\n"
+            f"Episode {episode + 1} finished after {step_count} steps. Total Reward: {total_reward}\n"
         )
-
-
-# Testing the model
-test_episodes = 10  # Number of test episodes
-# Define your predefined states/scenarios if any, for testing
-predefined_states = [
-    # Define states like [state1, state2, ...]
-]
-
-test_model(env, q_table, test_episodes, predefined_states)
-
-print("Testing completed.\n")
