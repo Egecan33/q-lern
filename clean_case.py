@@ -104,6 +104,7 @@ class CustomEnv(gym.Env):
                     1 for s in self._get_blocking_slots(i) if self.state[s] > 0
                 )
                 reward += priority * (11 - 2 * blocking_bobbins)
+        reward -= self.step_count * 5
         return reward
 
     def _get_blocking_slots(self, slot):
