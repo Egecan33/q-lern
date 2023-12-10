@@ -126,6 +126,7 @@ class CustomEnv(gym.Env):
         print("Layer 1:", self.state[0:4])
         print("Layer 2:", self.state[4:7])
         print("Layer 3:", self.state[7:9])
+     
 
     def find_available_moves(self):
         available_moves = []
