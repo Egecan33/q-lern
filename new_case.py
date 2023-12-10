@@ -128,7 +128,9 @@ class CustomEnv(gym.Env):
         self.state[to_slot], self.state[from_slot] = (
             self.state[from_slot],
             0,
+            
         )  ## explore how this will work with our dicinary format of bobbins
+
         print(f"Moved bobbin from slot {from_slot + 1} to slot {to_slot + 1}")
         return True  # Indicates the move was successful
         # Implement the bobbin moving logic here #İzel
