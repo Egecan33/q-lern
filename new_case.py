@@ -150,7 +150,20 @@ class CustomEnv(gym.Env):
         - Return True if free, False otherwise.
         """
         # Implement the logic to check if a bobbin is free
-        return True  # Pınar
+        if slot < 4:
+            return True  # No need for support if on the bottom layer
+        elif slot < 7:
+            # Check if the coils supporting the bobbin are present in the two layers below
+            return (
+                    self.state[slot - 4] > 0 and
+                    self.state[slot - 3] > 0
+            )
+        else:
+            # Check if the coils supporting the bobbin are present in the two layers below
+            return (
+                    self.state[slot - 3] > 0 and
+                    self.state[slot - 2] > 0
+            )
 
     def _is_slot_available(self, slot, from_slot=None):
         # Slots 1 to 4 are available if they are empty
@@ -192,8 +205,28 @@ class CustomEnv(gym.Env):
         Get the slots that block a given slot.
         - Return a list of blocking slots.
         """
-        # Define the blocking slots here
-        return []  # Pınar +Selin
+        num_blocking_slots = 0
+
+        if slot < 4:
+            return num_blocking_slots  # No blocking slots if on the bottom layer
+
+        elif slot < 7:
+            # Check if the coils supporting the bobbin are present in the two layers below
+            if self.state[slot + 2] > 0:
+                num_blocking_slots += 1
+            if self.state[slot + 3] == 0:
+                num_blocking_slots += 1
+
+        else:
+            # Check if the coils supporting the bobbin are present in the two layers below
+            if self.state[slot + 4] > 0:
+                num_blocking_slots += 1
+            if self.state[slot + 3] > 0:
+                num_blocking_slots += 1
+            else:
+                num_blocking_slots
+
+        return num_blocking_slots
 
     def render(self, mode="human"):
         print("\nCurrent State of Environment:")
