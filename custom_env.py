@@ -84,6 +84,10 @@ class CustomEnv(gym.Env):
                 if position > 0:
                     sorted_priorities[i] = bobbin_priorities[position - 1]
 
+            for i, position in enumerate(bobbin_positions):
+                if position > 0:
+                    bobbin_positions[i] = 1
+
             # Update the environment state
             self.state = {
                 "bobbin_positions": bobbin_positions,

@@ -56,6 +56,7 @@ def main():
     test_episodes = 10
     predefined_states = [
         {
+            "bobbin_positions": [1, 1, 0, 0, 1, 0, 0, 0, 0],
             "bobbin_priorities": [
                 2,
                 2,

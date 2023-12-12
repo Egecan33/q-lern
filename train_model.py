@@ -16,7 +16,7 @@ epsilon = 1.0  # Initial exploration rate
 max_epsilon = 1.0  # Maximum exploration rate
 min_epsilon = 0.01  # Minimum exploration rate
 epsilon_decay = 0.01  # Decay rate for exploration probability
-total_episodes = 35000  # Total number of episodes for training
+total_episodes = 500000  # Total number of episodes for training
 
 
 # Function to encode the state into a unique index
