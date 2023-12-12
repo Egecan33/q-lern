@@ -1,3 +1,4 @@
+import math
 import gym
 import numpy as np
 import random
@@ -19,6 +20,17 @@ class CustomEnv(gym.Env):
             1, 9, size=9
         )  # Randomly assign bobbin priorities
         self.max_bobbin_count = 8
+
+        self.final_state_penalty_multiplier = -9  # Multiplier for final state penalty
+        self.random_bobbin_count = 0  # Randomly assign bobbin count
+        self.max_movements = 50
+        self.total_movements = 0  # Track total movements
+        self.movement_penalty = (
+            -5
+            * (math.sqrt(self.total_movements + 1))
+            * (self.max_bobbin_count - self.random_bobbin_count)
+        )  # Penalty for each movement
+
         self.state = self.reset()
 
     def set_predefined_state(self, predefined_state):
@@ -42,18 +54,20 @@ class CustomEnv(gym.Env):
         """
         Reset the environment to its initial state.
         """
+        self.random_bobbin_count = 0  # Reset random bobbin count
+        self.total_movements = 0  # Reset total movements
         max_attempts = 100
 
         for _ in range(max_attempts):
             # Generate a random bobbin count
-            random_bobbin_count = random.randint(1, self.max_bobbin_count)
+            self.random_bobbin_count = random.randint(1, self.max_bobbin_count)
 
             # Generate bobbin IDs and priorities
             bobbin_positions = np.zeros(self.max_bobbin_count + 1, dtype=int)
             bobbin_priorities = np.zeros(self.max_bobbin_count + 1, dtype=int)
 
             # Assign IDs and priorities to the bobbins
-            for i in range(random_bobbin_count):
+            for i in range(self.random_bobbin_count):
                 bobbin_positions[i] = i + 1  # Bobbin ID (assuming it starts from 1)
                 if bobbin_due_dates is None:
                     due_date = np.random.randint(1, 10)
@@ -88,7 +102,6 @@ class CustomEnv(gym.Env):
                 + [0] * (self.max_bobbin_count - 1)
             ),
         }
-        return self.state
 
     def checkInitialPositionFeasibility(self, state):
         """
@@ -141,19 +154,26 @@ class CustomEnv(gym.Env):
         done = False
         reward = 0
 
-        if action == 81:  # 'Do nothing' action
+        # Check if the episode is terminated
+        if action == 81 or self.is_episode_terminated():
+            # Calculate the penalty for the final state
+            final_state_penalty = self.calculate_final_state_penalty()
+            reward += final_state_penalty
             done = True
         else:
             from_slot, to_slot = divmod(action, 9)
 
             # Attempt to move the bobbin and check if it was successful
-            if not self.move_bobbin(from_slot, to_slot):
-                # The move was not valid; you can choose to try another action here
-                print(f"Trying another action due to invalid move.")
-                # Implement logic for choosing another action if needed
+            if self.move_bobbin(from_slot, to_slot):
+                # Increment the total movements if the move is successful
+                self.total_movements += 1
 
-        # Calculate reward and other metrics as before
-        reward = self.calculate_reward()
+                # Calculate reward based on the move
+                reward = self.calculate_reward()
+            else:
+                print(f"Invalid move from slot {from_slot + 1} to slot {to_slot + 1}")
+                # You can add additional logic for handling invalid moves
+
         return self.state, reward, done, {}
 
     def move_bobbin(self, from_slot, to_slot):
@@ -178,6 +198,8 @@ class CustomEnv(gym.Env):
             from_slot
         ]
         self.state["bobbin_priorities"][from_slot] = 0
+
+        self.total_movements += 1
 
         print(f"Moved bobbin from slot {from_slot + 1} to slot {to_slot + 1}")
         return True  # Indicates the move was successful
@@ -247,6 +269,7 @@ class CustomEnv(gym.Env):
         bobbin_positions = self.state["bobbin_positions"]
         bobbin_priorities = self.state["bobbin_priorities"]
 
+        # Calculate reward based on bobbins and their positions
         for i in range(len(bobbin_positions)):
             if bobbin_positions[i] > 0:  # Check if there's a bobbin in the slot
                 priority = bobbin_priorities[i]
@@ -254,7 +277,21 @@ class CustomEnv(gym.Env):
                 blocking_bobbins = len(blocking_slots)
                 reward += priority * (11 - 2 * blocking_bobbins)
 
+        # Apply movement penalty
+        reward += self.movement_penalty * self.total_movements
+
         return reward
+
+    def calculate_final_state_penalty(self):
+        # Implement logic to calculate penalty based on the final state
+        # Example: Penalize based on the number of blocked bobbins
+        final_penalty = 0
+        for i in range(len(self.state["bobbin_positions"])):
+            if self.state["bobbin_positions"][i] > 0:
+                final_penalty += self.final_state_penalty_multiplier * len(
+                    self._get_blocking_slots(i) * self.state["bobbin_priorities"][i]
+                )
+        return final_penalty
 
     def _get_blocking_slots(self, slot):
         bobbin_positions = self.state["bobbin_positions"]
@@ -319,3 +356,9 @@ class CustomEnv(gym.Env):
         available_moves.append(81)
 
         return available_moves
+
+    def is_episode_terminated(self):
+        if self.total_movements >= self.max_movements:
+            return True
+            # Add other termination conditions if necessary
+        return False

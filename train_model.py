@@ -15,7 +15,7 @@ discount_factor = 0.9  # Discount factor for future rewards
 epsilon = 1.0  # Initial exploration rate
 max_epsilon = 1.0  # Maximum exploration rate
 min_epsilon = 0.01  # Minimum exploration rate
-epsilon_decay = 0.001  # Decay rate for exploration probability
+epsilon_decay = 0.01  # Decay rate for exploration probability
 total_episodes = 35000  # Total number of episodes for training
 
 

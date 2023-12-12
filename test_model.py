@@ -31,7 +31,7 @@ def test_model(env, q_table, test_episodes, predefined_states=None):
                 action = np.argmax(q_table[state])
             else:
                 # Default action if the state is not in the table
-                action = 0
+                action = 81
 
             new_state_dict, reward, done, _ = env.step(action)
             total_reward += reward
@@ -56,13 +56,12 @@ def main():
     test_episodes = 10
     predefined_states = [
         {
-            "bobbin_positions": [2, 1, 3, 0, 0, 0, 0, 0, 0],
             "bobbin_priorities": [
                 2,
-                3,
+                2,
+                0,
+                0,
                 10,
-                0,
-                0,
                 0,
                 0,
                 0,
